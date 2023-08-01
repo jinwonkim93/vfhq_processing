@@ -64,10 +64,7 @@ def extract_clip_cropped_face(clip_meta_path, vid_path, save_vid_root, save_crop
         cv2.imwrite(save_cropped_face_path, cropped_face, [cv2.IMWRITE_PNG_COMPRESSION, compression_level])
 
 
-def download_crop_clip_meta(clip_meta_path):
-    clip_name = os.path.basename(clip_meta_path)
-    _, videoid, pid, clip_idx, frame_rlt = clip_name.split('+')
-
+def download_video(videoid):
     # download youtube video
     ydl_opts = {
         'format': 'bestvideo/best',
@@ -80,6 +77,10 @@ def download_crop_clip_meta(clip_meta_path):
 
     except Exception as error:
         print('Error: ', error)
+
+def crop_clip_meta(clip_meta_path):
+    clip_name = os.path.basename(clip_meta_path)
+    _, videoid, pid, clip_idx, frame_rlt = clip_name.split('+')
 
     # save extracted hq frames
     save_extracted_hq_results = f'datasets/train/extracted_hq_results/{videoid}'
@@ -96,10 +97,21 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--metadata", default='meta_info', help='Path to metadata')
     parser.add_argument("--workers", default=4, type=int, help='Number of workers')
-    clip_meta_path = './meta_info/Clip+_-91nXXjrVo+P0+C0+F1537-1825.txt'
     args = parser.parse_args()
     meta_info = sorted(list(Path(args.metadata).glob("*.txt")))
     meta_info = [str(file) for file in meta_info]
+    video_info = set()
+
+    for clip_meta_path in meta_info:
+        clip_name = os.path.basename(clip_meta_path)
+        _, videoid, pid, clip_idx, frame_rlt = clip_name.split('+')
+        video_info.add(videoid)
+    
+    print("Number of videos :", len(video_info))
+
     pool = Pool(processes=args.workers)
-    for chunks_data in tqdm(pool.imap(download_crop_clip_meta, meta_info)):
+    for chunks_data in tqdm(pool.imap(download_video, video_info)):
+        pass
+
+    for chunks_data in tqdm(pool.imap(crop_clip_meta, meta_info)):
         pass
